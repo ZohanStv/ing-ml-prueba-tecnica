@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corona - Inferencia de Dígitos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            margin-top: 20px;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Corona - Inferencia de Dígitos</h1>
+    
+    <form id="uploadForm" action="/predict/" method="post" enctype="multipart/form-data">
+        <label for="file">Subir imagen:</label><br>
+        <input type="file" id="file" name="image" accept="image/*" required><br><br>
+        <input type="hidden" id="model" name="model" value="clf.pickle">
+        <button type="submit">Enviar imagen</button>
+    </form>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            if (!document.getElementById('file').files.length) {
+                alert('Por favor, selecciona una imagen antes de enviar.');
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
