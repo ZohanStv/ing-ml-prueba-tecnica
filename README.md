@@ -89,3 +89,56 @@ Para ejecutar la aplicación en Docker de manera local asegúrese en primera ins
     docker compose up
     ```
 Si no es la primera vez que ejecutas la aplicación de manera local usando Docker y ya posees una imagen virtual (imagen del paso **1 .Creación de la imagen virtual**) puedes ejecutar directamente el paso  **2. Ejecución del contenedor**.
+
+---
+# 📑 REST API Documentation
+## Instroducción
+Esta API proporciona un único punto de acceso para hacer predicciones basadas en una imagen de entrada y un modelo de aprendizaje automático especificado. La API acepta una solicitud POST con un formulario que contiene un archivo de imagen y el nombre del modelo, y devuelve el resultado de la predicción.
+
+### Base URL
+* **[DEV - Docker]**: http://localhost:80/
+* **[DEV - No Docker]**: http://localhost:8000/
+* **[PROD]**: http://44.201.153.114:8000/
+
+> ⚠️ ***Es importante tener en cuenta que:** para usar la Base URL de desarrollo debemos de tener en ejecución la aplicación en la máquina local, ya sea en un contenedor o no.*
+
+## Endpoints
+
+### POST `{{Base URL}}/predict/`
+Este endpoint acepta un archivo de imagen y un nombre de modelo, y devuelve una predicción basada en el modelo proporcionado.
+
+**Request**.
+* **Method**: POST
+* **Endpoint**: /predict/
+* **Content-Type**: multipart/form-data
+
+**Parámetros**.
+
+El cuerpo (**body**) de la solicitud debe contener los siguientes dos parámetros como **form-data**.
+
+| **Parámetro** | **Tipo** | **Requerido** | **Descripción**                                           |
+| ------------- | -------- | ------------- | --------------------------------------------------------- |
+| **image**     | file     | Sí            | Imagen que será usada para la inferencia.                 |
+| **model**     | string   | Sí            | Nombre del modelo de Machine Learning usado para inferir. |
+
+**Ejemplo request**
+```bash
+curl -X POST {{Base URL}}/predict/ \
+  -F 'image=@/path/to/your/image.jpg' \
+  -F 'model=clf.pickle'
+
+> {
+    "status_code": 200,
+    "query_id": "70cd7b2a-dd66-4fce-b13a-cede33c80422",
+    "prediction": 2,
+    "execution_time": "2.08 seg"
+}
+```
+donde:
+| **Campo**          | **Tipo** | **Descripción**                                                             |
+| ------------------ | -------- | --------------------------------------------------------------------------- |
+| **success**        | int      | 200 para indicar que la petición fue exitosa.                               |
+| **query_id**       | string   | uuid que identifica de manera única la petición.                            |
+| **prediction**     | int      | Predicción del modelo basado en la imagen.                                  |
+| **execution_time** | string   | Tiempo que le toma al modelo en realizar una predicción medida en segundos. |
+| **error**          | string   | Mensaje de error si la consulta falla (opcional)                            |
