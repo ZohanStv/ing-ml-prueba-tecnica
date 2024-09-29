@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  corona-app:
+    container_name: model
+    image: corona-model:v0
+    ports:
+      - "80:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
