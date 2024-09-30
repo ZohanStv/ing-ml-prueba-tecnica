@@ -142,3 +142,71 @@ donde:
 | **prediction**     | int      | Predicción del modelo basado en la imagen.                                  |
 | **execution_time** | string   | Tiempo que le toma al modelo en realizar una predicción medida en segundos. |
 | **error**          | string   | Mensaje de error si la consulta falla (opcional)                            |
+
+# Arquitectura en Producción
+
+A continuación se muestra la arquitectura empleada en AWS que sirve al modelo actualmente. 
+
+> *Recordar que la aplicación se encuentra desplegada en http://44.201.153.114:8000/*
+
+![arquitectura](./arquitectura.png)
+
+---
+# Estrategia para la detección de Drift
+
+Para abordar el problema del **drift** en datos en un sistema de machine learning en producción, se propone una estrategia que abarque: 
+1. Detección.
+2. Reentrenamiento.
+3. Automatización.
+
+## Detección
+El **drift** de los datos puede presentarse como un cambio en las distribuciones estadísticas de los datos de entrada. Por tal motivo es importante comparar la distribución de los datos de entrada actuales con los datos de entrenamiento. Cambios significativos pueden señalar un **drift**.
+
+**Servicios**:
+* **Amazon CloudWatch**: Para monitorear métricas del modelo en tiempo real como la precisión o error.
+* **Amazon S3**: Almacenar datos históricos para comparar distribuciones.
+* **AWS Lambda**: Para ejecutar scripts que detecten drift periódicamente (Usar métricas estadísticas como el **Wasserstein distance** para comparar la distribución actual de los datos con la distribución que se utilizó para entrenar el modelo originalmente).
+  
+## Reentrenamiento
+Una vez que se detecta drift, es esencial tener una estrategia que permita decidir cuándo y cómo reentrenar el modelo para corregir la pérdida de precisión.
+
+> ⚠️ ***Es importante tener en cuenta que:***
+> 
+> 1. *Es importante no reentrenar con mucha frecuencia, ya que esto puede ser costoso y causar sobreajuste. Se deben definir reglas claras basadas en la severidad del drift detectado.*
+> 2. *Para que el reentrenamiento sea efectivo, se debe evaluar si hay suficientes datos nuevos que representen adecuadamente la nueva distribución o cambios en el comportamiento del negocio.*
+
+**Servicios:**
+
+* **Amazon S3**: Almacenar los nuevos datos de entrada y los conjuntos de datos para el reentrenamiento.
+* **Amazon SageMaker**: Para entrenar, evaluar, y versionar nuevos modelos de manera escalable.
+* **AWS Step Functions**: Orquestar el flujo de trabajo automatizado para la detección del drift, reentrenamiento, y despliegue.
+* **Amazon CloudWatch Events**: Programar y lanzar workflows de reentrenamiento.
+* **AWS CodePipeline**: Para automatizar el despliegue del nuevo modelo.
+
+## Automatización
+El pipeline automatizado debe ser robusto para gestionar todas las etapas de recolección de nuevos datos, reentrenamiento del modelo y despliegue sin interrupción del servicio.
+### Arquitectura del Pipeline:
+* **Recolección de datos**: Implementación de un sistema que peromita la recolección de datos de manera continua.
+    > ⚠️ ***Es importante tener en cuenta que**: se debe considerar una limpieza de datos en caso de que el proceso lo necesite.*
+* **Reentrenamiento**: Configurar el sistema para que, cuando se detecte **drift** o se alcance una cantidad suficiente de nuevos datos, se dispare automáticamente un proceso de reentrenamiento del modelo.
+    > ⚠️ ***Es importante tener en cuenta que**: antes de desplegar el modelo, es fundamental validar el desempeño del modelo re-entrenado en un conjunto de validación. Solo si supera a la versión actual en términos de precisión y estabilidad debe proceder al despliegue.*
+* **Despliegue:**
+  Es importante tener una estrategia que permita desplegar el nuevo modelo sin la necesidad de interrumpir el servicio. Para esto contamos con dos estrategias:
+  * **Blue/Green Deployment**: Se puede implementar un enfoque de despliegue Blue/Green donde el nuevo modelo se despliega en paralelo al modelo existente. Solo después de comprobar su rendimiento en producción en tiempo real, se puede hacer la transición completa.
+  * **Canary Deployment**: Otra opción es un despliegue canario donde el nuevo modelo se pruebe con una pequeña porción del tráfico antes de aumentar gradualmente el porcentaje de solicitudes que maneja.
+
+**Servicios**:
+* **Amazon ECR**: Almacenar la nueva imagen de contenedor con el modelo reentrenado.
+* **Amazon ECS**: Ejecutar el contenedor con el nuevo modelo.
+* **AWS CodePipeline**: Para automatizar el proceso de despliegue.
+* **Amazon CloudWatch**: Monitorear el rendimiento del nuevo modelo una vez desplegado.
+
+## Desafíos Técnicos y Operativos
+* **Costos**: Ejecutar pipelines automáticos, especialmente para entrenamiento en SageMaker, puede generar costos altos. 
+* **Latencia del despliegue**: Aunque Blue/Green o Canary Deployments minimizan los riesgos, pueden aumentar la latencia temporalmente mientras se prueba el nuevo modelo.
+* **Gestión de múltiples versiones**: Deberás asegurarte de que la infraestructura sea capaz de gestionar múltiples versiones de un modelo y revertir rápidamente si es necesario.
+* **Compatibilidad entre versiones de modelo**: El nuevo modelo debe ser compatible con el sistema de producción existente, lo que implica garantizar que la estructura de entrada y salida no cambie drásticamente.
+
+A continuación se presenta una arquitectura en AWS que describe los servicios anteriores mencionados de una manera simplificada para generar un almacenamiento, entrenamiento y despliegue automatizado.
+
+![arquitectura-drift](./arquitectura-drift.png)
