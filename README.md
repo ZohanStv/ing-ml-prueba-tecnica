@@ -98,7 +98,7 @@ Esta API proporciona un único punto de acceso para hacer predicciones basadas e
 ### Base URL
 * **[DEV - Docker]**: http://localhost:80/
 * **[DEV - No Docker]**: http://localhost:8000/
-* **[PROD]**: http://44.201.153.114:8000/
+* **[PROD]**: http://18.206.214.185:8000/
 
 > ⚠️ ***Es importante tener en cuenta que:** para usar la Base URL de desarrollo debemos de tener en ejecución la aplicación en la máquina local, ya sea en un contenedor o no.*
 
