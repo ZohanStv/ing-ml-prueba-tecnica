@@ -29,23 +29,69 @@
         button:hover {
             background-color: #45a049;
         }
+        .result {
+            margin-top: 20px;
+            display: none; /* Oculto por defecto */
+            font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
     <h1>Corona - Inferencia de Dígitos</h1>
     
-    <form id="uploadForm" action="/predict/" method="post" enctype="multipart/form-data">
+    <form id="uploadForm" enctype="multipart/form-data">
         <label for="file">Subir imagen:</label><br>
         <input type="file" id="file" name="image" accept="image/*" required><br><br>
         <input type="hidden" id="model" name="model" value="clf.pickle">
         <button type="submit">Enviar imagen</button>
     </form>
 
+    <div id="resultContainer" class="result">
+        <p><strong>Predicción:</strong> <span id="predictionResult"></span>
+        <p><strong>Tiempo de ejecución:</strong> <span id="executionTimeResult"></span></p>
+    </div>
+
     <script>
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
-            if (!document.getElementById('file').files.length) {
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();  // Evita el envío tradicional del formulario
+            
+            // Verifica si se seleccionó un archivo
+            const fileInput = document.getElementById('file');
+            if (!fileInput.files.length) {
                 alert('Por favor, selecciona una imagen antes de enviar.');
-                e.preventDefault();
+                return;
+            }
+
+            // Prepara el formData con la imagen y el modelo
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('model', document.getElementById('model').value);
+
+            try {
+                // Realiza la petición a tu API
+                const response = await fetch('/predict/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    alert('Error al realizar la predicción.');
+                    return;
+                }
+
+                // Convierte la respuesta a JSON
+                const data = await response.json();
+
+                // Actualiza los campos con los resultados
+                document.getElementById('predictionResult').textContent = data.prediction;
+                document.getElementById('executionTimeResult').textContent = data.execution_time;
+
+                // Muestra el contenedor de resultados
+                document.getElementById('resultContainer').style.display = 'block';
+
+            } catch (error) {
+                alert('Hubo un error al intentar conectarse con el servidor.');
+                console.error('Error:', error);
             }
         });
     </script>

@@ -143,6 +143,14 @@ donde:
 | **execution_time** | string   | Tiempo que le toma al modelo en realizar una predicción medida en segundos. |
 | **error**          | string   | Mensaje de error si la consulta falla (opcional)                            |
 
+### GET `{{Base URL}}/docs/`
+Este endpoint permite visualizar la documentación de la API en formato **swagger** de manera interactiva.
+
+**Request**.
+* **Method**: GET
+* **Endpoint**: /docs/
+
+
 # Arquitectura en Producción
 
 A continuación se muestra la arquitectura empleada en AWS que sirve al modelo actualmente. 

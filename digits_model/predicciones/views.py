@@ -1,18 +1,43 @@
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-import pickle
+from rest_framework.decorators import api_view, parser_classes
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from PIL import Image
+import pickle
 import numpy as np
 import time
 import uuid
+from rest_framework.parsers import MultiPartParser
+
+
+# Esta vista permite renderizar el home
 
 
 def index(request):
     return render(request, 'index.html')
 
 
+# Definir los parámetros para documentación swagger
+image_param = openapi.Parameter(
+    'image', openapi.IN_FORM, description="Imagen que será usada para la inferencia.", type=openapi.TYPE_FILE, required=True)
+
+model_param = openapi.Parameter(
+    'model', openapi.IN_FORM, description="Nombre del modelo de Machine Learning usado para inferir.", type=openapi.TYPE_STRING, required=True)
+
+
 @csrf_exempt
+@swagger_auto_schema(
+    method='post',
+    manual_parameters=[image_param, model_param],
+    operation_summary="Realiza una predicción basada en una imagen y un modelo especificado",
+    operation_description="Este endpoint acepta una imagen y el nombre de un modelo de Machine Learning. Devuelve una predicción basada en la imagen proporcionada y el modelo especificado.",
+    responses={200: 'Predicción realizada con éxito',
+               400: 'Petición realizada incorrectamente'}
+)
+@api_view(['POST'])
+@parser_classes([MultiPartParser])
 def predict(request):
     print(f"RQUEST: {request.POST}")
     print(f"Metodo: {request.method}")
@@ -34,7 +59,7 @@ def predict(request):
             with open(f"./model/{model_name}", "rb") as f:
                 clf = pickle.load(f)
         except:
-            return JsonResponse({'error': f'El modelo con nombre {model_name} no fue encontrado'})
+            return JsonResponse({'error': f'El modelo con nombre {model_name} no fue encontrado'}, status=400)
 
         # Obtener la imagen desde el archivo enviado
         image_file = request.FILES['image']
